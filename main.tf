@@ -1,11 +1,11 @@
 # Convert integration name into snake case
 locals {
-  db_instance_identifier = join("", [for element in split("-", lower(var.db_instance_identifier)) : title(element)])
+  load_balancer_id = join("", [for element in split("-", lower(var.load_balancer_id)) : title(element)])
   opsgenie_responding_teams = setunion(var.opsgenie_responding_teams, toset([var.opsgenie_owner_team]))
 
   # Create alarm name based on the trigger condition (hopefully prevent duplicates)
   # (e.g. PaymentGatewayAverageApproximateNumberOfMessagesVisibleGreaterThanOrEqualToThreshold10000In5Periods)
-  alarm_name = var.alarm_name == null ? "${local.db_instance_identifier}Rds${var.statistic}${var.metric_name}${var.comparison}${var.threshold}In${var.evaluation_periods}PeriodsOf${var.period}" : var.alarm_name
+  alarm_name = var.alarm_name == null ? "${local.load_balancer_id}Alb${var.statistic}${var.metric_name}${var.comparison}${var.threshold}In${var.evaluation_periods}PeriodsOf${var.period}" : var.alarm_name
 }
 
 # Retrieve the requested Opsgenie users
@@ -31,7 +31,7 @@ data "aws_caller_identity" "default" {
 
 # Create Opsgenie API integration
 resource "opsgenie_api_integration" "opsgenie_integration" {
-  name = "Terraform${data.aws_caller_identity.default.account_id}RdsIntegration${local.alarm_name}"
+  name = "Terraform${data.aws_caller_identity.default.account_id}AlbIntegration${local.alarm_name}"
   type = "AmazonSns"
   owner_team_id = data.opsgenie_team.opsgenie_owner_team.id
   # Attach responders to the integration
@@ -75,7 +75,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm" {
   period = var.period
   statistic = var.statistic
   threshold = var.threshold
-  # Link to the requested RDS instance
+  # Link to the requested load balancer
   dimensions = {
     LoadBalancer = var.load_balancer_id
   }
@@ -97,7 +97,7 @@ resource "opsgenie_integration_action" "alarm" {
     entity = var.opsgenie_entity
     user = var.opsgenie_user
     tags = [
-      "RDS",
+      "ALB",
       var.metric_name
     ]
     priority = var.opsgenie_priority
