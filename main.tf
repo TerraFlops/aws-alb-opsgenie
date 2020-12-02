@@ -1,6 +1,6 @@
 # Convert integration name into snake case
 locals {
-  load_balancer_id = join("", [for element in split("-", lower(var.load_balancer_id)) : title(element)])
+  load_balancer_id = join("", [for element in split("/", lower(var.load_balancer_id)) : title(element)])
   opsgenie_responding_teams = setunion(var.opsgenie_responding_teams, toset([var.opsgenie_owner_team]))
 
   # Create alarm name based on the trigger condition (hopefully prevent duplicates)
